@@ -1,6 +1,6 @@
 # python-notebooks
 
-## List of Pythong notebooks to upload
+## List of Python notebooks to upload
 
 ### A notebook focussed on testing the outputs of a Random Number Generator: comes with an *.ipynb and a *.csv which is read into the file at the top. 
 
