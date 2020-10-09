@@ -1,0 +1,13 @@
+,variant_id,country,device,users,customers
+0,0,France,desktop,1375,361
+1,0,France,mobile,1968,166
+2,0,France,tablet,292,32
+3,0,United Kingdom,desktop,903,202
+4,0,United Kingdom,mobile,3625,320
+5,0,United Kingdom,tablet,612,73
+6,1,France,desktop,1410,366
+7,1,France,mobile,1940,157
+8,1,France,tablet,276,21
+9,1,United Kingdom,desktop,864,190
+10,1,United Kingdom,mobile,3718,337
+11,1,United Kingdom,tablet,566,64

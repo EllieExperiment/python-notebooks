@@ -1,0 +1,14 @@
+experiment_name,variant_id,duration,country,device,users,cr,customers
+PBX-shop-PDP-editor-beta-feb19,0,13,All,All,2813,0.41,1153
+PBX-shop-PDP-editor-beta-feb19,1,13,All,All,321,0.37,119
+PBX-shop-RP-priceSortDropdown-feb19,0,16,All,All,208255,0.19,39464
+PBX-shop-RP-priceSortDropdown-feb19,1,16,All,All,209360,0.19,39611
+PBX-shop-RP-product-card-jan19,0,16,All,All,15513,0.13,1983
+PBX-shop-RP-product-card-jan19,1,16,All,All,15714,0.12,1920
+PBX-shop-RP-product-card-jan19,2,16,All,All,10452,0.12,1284
+PBX-shop-all-search-feb19,0,18,All,All,238002,0.16,37247
+PBX-shop-all-search-feb19,1,18,All,All,238396,0.16,37380
+PBX-shop-studio-collageCanvas-sep18,0,88,All,All,71582,0.39,28175
+PBX-shop-studio-collageCanvas-sep18,1,88,All,All,70907,0.41,29270
+PBX-shop-studio-collagePoster-sep18,0,86,All,All,22838,0.46,10462
+PBX-shop-studio-collagePoster-sep18,1,86,All,All,23028,0.47,10800
