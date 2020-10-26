@@ -1,12 +1,12 @@
 # python-notebooks
 
-## List of Sample Python notebooks to upload
+## List of Sample Python notebooks uploaded `master`:
 
-1. A notebook focussed on testing the outputs of a Random Number Generator: comes with an * .ipynb and a * .csv which is read into the file at the top. 
+1. `01_RNG_tester` A notebook focussed on testing the outputs of a Random Number Generator: comes with an * .ipynb and a * .csv which is read into the file at the top. 
 
-2. A python notebook which analyses an experiment statistically and outputs a load of data: comes with one * .ipynb and two * .csvs which are read in at the top.
+2. `01_eh_exp_analysis` A python notebook which analyses an experiment statistically and outputs a load of data: comes with one * .ipynb and two * .csvs which are read in at the top.
 
-3. A Big data python notebook which imports a compiled .py file in the same file/tree and then runs the functions from that file (I can’t remember what it does, it’s from a Data Science course I did at general assembly)
+3. `intro_to_big_data-lesson` A Big data python notebook which imports a compiled .py file in the same file/tree and then runs the functions from that file (I can’t remember what it does, it’s from a Data Science course I did at general assembly)
 
 ## Notes on how to call functions hosted in a * .py file in the same folder:
 https://problemsolvingwithpython.com/07-Functions-and-Modules/07.05-Calling-Functions-from-Other-Files/
@@ -20,18 +20,18 @@ https://stackoverflow.com/questions/56481126/how-to-use-code-from-external-pytho
 
 ## List of notebooks found in 00_WordVectorExamples
 
-#### 01_spark_examples_py
+### 01_spark_examples_py
 Inside the examples folder for python, under a sub-folder called ML, there are a punch of example python scripts, one includes vectorising and a few other things.
 Recommended files to look at include:
-1. word2vec_example.py
-2. count_vectorizer_example.py
-3. clustering.py
+1. `word2vec_example.py`
+2. `count_vectorizer_example.py`
+3. `clustering.py`
 
-#### 2_latent-variables-and-natural-language-processing
+### 2_latent-variables-and-natural-language-processing
 A python notebook which looks at using “bag of words” and a few other approaches at high level to vectorise words, again for the purpose of NLP
-* The notebook is called “lesson-16-codealong.ipynb”
+* The notebook is called `lesson-16-codealong.ipynb`
 
-### Useful as it covers:
+#### Useful as it covers:
 ##### from sklearn.feature_extraction.text import CountVectorizer
 AND
 ##### from gensim.models.ldamodel import LdaModel
@@ -40,9 +40,9 @@ and also covers “bag od words”
 -- #Transform the text into the bag-of-words (bow) space using our vectorizer
 ##### new_bow = vectorizer.transform(new_text)
 
-#### 3_nlp_tagging_vectorising
+### 3_nlp_tagging_vectorising
 A set of notebooks I have using `NLTK` to compute `TF-IDF`, which is pretty simple but informative, using a package called `Gensim`, and it has a written out function for creating bigrams etc, which is similar to the approach suggested in the first article (the one which links to the colaboratory notebook)
-* The notebook is called “Simple Tagging”
+* The notebook is called `Simple Tagging`
 
 
 ## Useful materials focussed on vectorising words for the purpose of either NLP or fuzzy matching
