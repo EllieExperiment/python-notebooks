@@ -1,0 +1,518 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "collapsed": true
+   },
+   "source": [
+    "# NLP with Machine Learning\n",
+    "\n",
+    "A step-by-step tutorial how to train your own sentiment classifier."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1) Data\n",
+    "\n",
+    "Dataset with YELP restaurant reviews from Edinburgh."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "\n",
+    "all_reviews = pd.read_csv('../data/E-restaurants-reviews.csv')\n",
+    "\n",
+    "all_reviews"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let's look at the distribution of ratings (stars):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "all_reviews.groupby('stars').count()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Preparation of the Classification Dataset\n",
+    "\n",
+    "Take about 1k samples form the most positive (5 stars) and the most negative (1 star)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "pos_reviews = all_reviews[all_reviews['stars'] == 5].sample(n=1000).copy()\n",
+    "pos_reviews['sentiment'] = 'POS'\n",
+    "\n",
+    "neg_reviews = all_reviews[all_reviews['stars'] == 1].copy()\n",
+    "neg_reviews['sentiment'] = 'NEG'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "# reshape the the final dataset\n",
+    "reviews = pd.concat((pos_reviews, neg_reviews))\n",
+    "reviews = reviews[['text', 'stars', 'sentiment']].reset_index(drop=True)\n",
+    "\n",
+    "reviews"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2) Selection of Features\n",
+    "\n",
+    "Any classifier needs to use so called _features_ to determine which class should be assigned.\n",
+    "\n",
+    "In this case, we're going to use word-based features, indicating presence of a particular word in the text.\n",
+    "\n",
+    "For example, whether the review contains words like __great__, __excelent__ or __bad__."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import nltk\n",
+    "\n",
+    "# init a tokenizer from NLTK\n",
+    "tokenizer = nltk.tokenize.TweetTokenizer()\n",
+    "\n",
+    "tokenizer.tokenize(reviews['text'][0])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Tokenize all our reviews and compute the frequency distribution of the individual words (tokens)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "texts_tokenized = (tokenizer.tokenize(row.text) for index, row in reviews.iterrows())\n",
+    "all_words = nltk.FreqDist(w.lower() for tokens in texts_tokenized for w in tokens)\n",
+    "\n",
+    "print('total number of words:', sum(all_words.values()))\n",
+    "print('unique words:', len(all_words))\n",
+    "print('words present only once:', sum(c for c in all_words.values() if c == 1))\n",
+    "\n",
+    "all_words.plot(30)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We will ignore the most frequent and infrequent words, as they convey too little information to be useful."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "words = all_words.copy()\n",
+    "for w, count in all_words.items():\n",
+    "    if count > 1000 or count == 1:\n",
+    "        del words[w]\n",
+    "\n",
+    "print('feature words:', len(words))\n",
+    "words.plot(40)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Feature extraction\n",
+    "\n",
+    "Create a function for generating features for a given text."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "word_features = frozenset(words.keys())\n",
+    "\n",
+    "def text_features(text):\n",
+    "    txt_words = set(tokenizer.tokenize(text.lower()))\n",
+    "    features = {}\n",
+    "    for w in txt_words & word_features:\n",
+    "        features['contains({})'.format(w)] = 'Yes'\n",
+    "    return features"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "text_features('The best restaurant ever!')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Apply the feature extraction function to the reviews."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "# generate tuples: (features_dict, sentiment)\n",
+    "feature_sets = [(text_features(row.text), row.sentiment) for index, row in reviews.iterrows()]\n",
+    "\n",
+    "feature_sets[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 3) Model Training\n",
+    "\n",
+    "First, we will randomly split the dataset into two sets. One for model training and one for evaluation.\n",
+    "\n",
+    "This way we can estimate how accurate the model would be in the real world."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "import random\n",
+    "\n",
+    "random.shuffle(feature_sets)\n",
+    "\n",
+    "train_set, test_set = feature_sets[:1500], feature_sets[1500:]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Train a classification model on the training dataset.\n",
+    "\n",
+    "We will use [__Naive Bayes__](https://en.wikipedia.org/wiki/Naive_Bayes_classifier) model.\n",
+    "\n",
+    "![Bayes' theorem](https://wikimedia.org/api/rest_v1/media/math/render/svg/b0122d84d632cc399d2a49924797f37a7db53b0c)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "classifier = nltk.NaiveBayesClassifier.train(train_set)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Then evaluate the trained model on testing dataset."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "nltk.classify.accuracy(classifier, test_set)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "def classify(text):\n",
+    "    print(classifier.classify(text_features(text)))\n",
+    "\n",
+    "classify('I recommend this restaurant.')\n",
+    "classify('I do not recommend this restaurant.')\n",
+    "classify('It had very bad food. It was a waste of time.')\n",
+    "classify('blah blah blah')\n",
+    "classify('ok')\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Show the most informative features for the trained classifier."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "classifier.show_most_informative_features(30)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Saving the trained classifier into a file. It could be used elsewhere without the need for training."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "import pickle\n",
+    "\n",
+    "with open('sentiment_classifier.pickle', 'wb') as f:\n",
+    "    pickle.dump(classifier, f)\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Trying different classifiers\n",
+    "\n",
+    "NLTK supports many other types of classification models."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[__Decision tree model__](https://en.wikipedia.org/wiki/Decision_tree)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "classifier = nltk.DecisionTreeClassifier.train(train_set)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "nltk.classify.accuracy(classifier, test_set)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "print(classifier.pseudocode())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "[__Maximum entropy model__](https://en.wikipedia.org/wiki/Multinomial_logistic_regression)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "classifier = nltk.MaxentClassifier.train(train_set)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "nltk.classify.accuracy(classifier, test_set)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "classifier.show_most_informative_features(30)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 4) Full stars-classification example\n",
+    "\n",
+    "More realistic example, classification into 1-5 stars ratings."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [],
+   "source": [
+    "star_reviews = all_reviews[['text', 'stars']].reset_index(drop=True)\n",
+    "\n",
+    "texts_tokenized = (tokenizer.tokenize(row.text) for index, row in star_reviews.iterrows())\n",
+    "all_words = nltk.FreqDist(w.lower() for tokens in texts_tokenized for w in tokens)\n",
+    "\n",
+    "words = all_words.copy()\n",
+    "for w, count in all_words.items():\n",
+    "    if count > 1000 or count < 3:\n",
+    "        del words[w]\n",
+    "\n",
+    "word_features = frozenset(words.keys())\n",
+    "def text_features(text):\n",
+    "    txt_words = set(tokenizer.tokenize(text.lower()))\n",
+    "    features = {}\n",
+    "    for w in txt_words & word_features:\n",
+    "        features['contains({})'.format(w)] = True\n",
+    "    return features\n",
+    "\n",
+    "feature_sets = [(text_features(row.text), row.stars) for index, row in star_reviews.iterrows()]\n",
+    "random.shuffle(feature_sets)\n",
+    "train_set, test_set = feature_sets[:15000], feature_sets[15000:]\n",
+    "\n",
+    "classifier = nltk.NaiveBayesClassifier.train(train_set)\n",
+    "nltk.classify.accuracy(classifier, test_set)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.5.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}
